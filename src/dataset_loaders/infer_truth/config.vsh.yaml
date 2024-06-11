@@ -1,0 +1,22 @@
+name: infer_truth
+namespace: process_dataset
+arguments:
+  - type: file
+    name: --input
+    description: "The spatial dataset to process."
+    example: "dataset.h5ad"
+    required: true
+  - type: file
+    name: --output
+    description: "The output file with inferred ground truth."
+    example: "dataset.h5ad"
+    required: true
+resources:
+  - type: python_script
+    path: script.py
+engines:
+  - type: docker
+    image: ghcr.io/openproblems-bio/base_python:1.0.4
+runners:
+  - type: executable
+  - type: nextflow
