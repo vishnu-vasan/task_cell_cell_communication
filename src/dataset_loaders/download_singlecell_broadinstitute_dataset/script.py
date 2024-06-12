@@ -6,15 +6,15 @@ import urllib.request
 
 ## VIASH START
 par = {
-  "dataset_curl_config": "resources/datasets/raw/singlecell_broadinstitute_configs/SCP2162.txt",
-  "dataset_id": "singlecell_broadinstitute_scp2162",
-  "dataset_name": "Mouse hippocampus Slide-tags snRNA-seq",
-  "dataset_url": "https://singlecell.broadinstitute.org/single_cell/study/SCP2162/slide-tags-snrna-seq-on-mouse-hippocampus#study-summary",
+  "dataset_curl_config": "resources/datasets/raw/singlecell_broadinstitute_configs/SCP2169.txt",
+  "dataset_id": "singlecell_broadinstitute_scp2169",
+  "dataset_name": "Human tonsil Slide-tags snRNA-seq",
+  "dataset_url": "https://singlecell.broadinstitute.org/single_cell/study/SCP2169/slide-tags-snrna-seq-on-human-tonsil#study-summary",
   "dataset_reference": "doi: 10.1038/s41586-023-06837-4",
-  "dataset_summary": "Slide-tags snRNA-seq data on the mouse hippocampus.",
+  "dataset_summary": "Slide-tags snRNA-seq data on the human tonsil.",
   "dataset_description": "Recent technological innovations have enabled the high-throughput quantification of gene expression and epigenetic regulation within individual cells, transforming our understanding of how complex tissues are constructed. Missing from these measurements, however, is the ability to routinely and easily spatially localise these profiled cells. We developed a strategy, Slide-tags, in which single nuclei within an intact tissue section are ‘tagged’ with spatial barcode oligonucleotides derived from DNA-barcoded beads with known positions. These tagged nuclei can then be used as input into a wide variety of single-nucleus profiling assays. We used Slide-tags to profile two different stages of development in the mouse brain.\n\nOverall design 	Slide-tags was used to spatially barcode nuclei from 20-micron thick fresh frozen tissue sections. These spatially barcoded nuclei were then used as input for 10x Genomics Chromium v3.1 snRNA-seq.",
-  "dataset_organism": "mus_musculus",
-  "output": "resources/datasets/SCP2162/raw_dataset.h5ad"
+  "dataset_organism": "homo_sapiens",
+  "output": "resources/datasets/SCP2169/raw_dataset.h5ad"
 }
 meta = {
   "temp_dir": "/tmp"
@@ -102,9 +102,12 @@ adata
 # AnnData object with n_obs × n_vars = 14165 × 36601
 #     var: 'gene_ids', 'feature_types'
 
+adata.obs_names = adata.obs_names.str.replace("-1", "")
+
 cluster_info = get_download_info(".*_cluster.csv$")
 download_file(cluster_info)
 cluster = read_typed_csv(cluster_info["dest"])
+cluster.index = cluster.index.str.replace("-1", "")
 cluster
 #                             X          Y    cell_type
 # NAME                                                 
@@ -125,6 +128,7 @@ cluster
 spatial_info = get_download_info(".*_spatial.csv$")
 download_file(spatial_info)
 spatial = read_typed_csv(spatial_info["dest"])
+spatial.index = spatial.index.str.replace("-1", "")
 spatial
 #                               X            Y    cell_type
 # NAME                                                     
@@ -145,6 +149,7 @@ spatial
 metadata_info = get_download_info(".*_metadata.csv$")
 download_file(metadata_info)
 metadata = read_typed_csv(metadata_info["dest"])
+metadata.index = metadata.index.str.replace("-1", "")
 metadata
 #                    biosample_id       donor_id         species  ... library_preparation_protocol__ontology_label     sex      cluster
 # NAME                                                            ...                                                                  
