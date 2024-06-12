@@ -201,5 +201,4 @@ for col in cols:
 #     var: 'gene_ids', 'feature_types'
 #     obsm: 'X_umap', 'spatial'
 
-os.makedirs(os.path.dirname(par["output"]), exist_ok=True)
 output.write_h5ad(par["output"], compression="gzip")

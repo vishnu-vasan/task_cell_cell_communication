@@ -51,6 +51,7 @@ argument_groups:
       description: "The downloaded dataset with metadata in uns."
       required: true
       direction: output
+      example: dataset.h5ad
 resources:
   - type: python_script
     path: script.py
