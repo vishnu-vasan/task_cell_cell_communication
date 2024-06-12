@@ -1,5 +1,5 @@
 name: infer_truth
-namespace: process_dataset
+namespace: dataset_loaders
 arguments:
   - type: file
     name: --input
@@ -11,12 +11,17 @@ arguments:
     description: "The output file with inferred ground truth."
     example: "dataset.h5ad"
     required: true
+    direction: output
 resources:
   - type: python_script
     path: script.py
+  - path: funs.py
 engines:
   - type: docker
     image: ghcr.io/openproblems-bio/base_python:1.0.4
+    setup:
+    - type: python
+      pypi: liana
 runners:
   - type: executable
   - type: nextflow
