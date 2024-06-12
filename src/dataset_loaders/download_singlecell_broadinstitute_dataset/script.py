@@ -1,15 +1,24 @@
-import anndata as ad
 import scanpy as sc
 import pandas as pd
+import re
+import os
+import urllib.request
 
 ## VIASH START
 par = {
-  "input": "resources/datasets/SCP2167/raw_data/SCP2167",
+  "dataset_curl_config": "resources/datasets/raw/singlecell_broadinstitute_configs/SCP2162.txt",
   "output": "resources/datasets/SCP2167/raw_dataset.h5ad"
+}
+meta = {
+  "temp_dir": "/tmp"
 }
 ## VIASH END
 
-expression = f"{par['input']}/expression/64265d4084cbeaef62ef36a9"
+temp_dir = f'{meta["temp_dir"]}/downloader_singlecell_broadinstitute_dataset'
+
+if not os.path.exists(temp_dir):
+  os.makedirs(temp_dir)
+
 
 def read_typed_csv(path: str) -> pd.DataFrame:
   col_names = pd.read_csv(path, nrows=1).columns.tolist()
@@ -35,13 +44,61 @@ def read_typed_csv(path: str) -> pd.DataFrame:
 
   return df
 
+with open(par["dataset_curl_config"], "r") as file:
+  curl_config = file.readlines()
 
-adata = sc.read_10x_mtx(expression)
+# split config by \n\n
+curl_config_split = "".join(curl_config).split("\n\n")
+
+# turn into a list of dicts with 'key="value"\nkey="value"'
+curl_config_dict_entry = '([^=]*)="(.*)"'
+curl_config_dicts = [
+  dict([
+    re.match(curl_config_dict_entry, x).groups()
+    for x in config.split("\n")
+    if re.match(curl_config_dict_entry, x) is not None
+  ])
+  for config in curl_config_split
+]
+# remove empty entries
+curl_config_dicts = [x for x in curl_config_dicts if x]
+
+def get_download_info(filename_query):
+  return next(
+    (
+      {
+        "url": x["url"],
+        "output": x["output"],
+        "dest": f"{temp_dir}/{x['output']}"
+      }
+      for x in curl_config_dicts
+      if re.match(filename_query, x["output"])
+    ),
+    None
+  )
+
+# fetch 10x_mtx data. get url for row with "matrix.mtx.gz" in output
+matrix_mtx = get_download_info(".*matrix.mtx.gz$")
+barcodes_tsv = get_download_info(".*barcodes.tsv.gz$")
+features_tsv = get_download_info(".*features.tsv.gz$")
+
+def download_file(info):
+  os.makedirs(os.path.dirname(info["dest"]), exist_ok=True)
+  urllib.request.urlretrieve(info["url"], info["dest"])
+
+# download mtx
+download_file(matrix_mtx)
+download_file(barcodes_tsv)
+download_file(features_tsv)
+
+adata = sc.read_10x_mtx(os.path.dirname(matrix_mtx["dest"]))
 adata
 # AnnData object with n_obs × n_vars = 14165 × 36601
 #     var: 'gene_ids', 'feature_types'
 
-cluster = read_typed_csv(f"{par['input']}/cluster/humancortex_cluster.csv")
+cluster_info = get_download_info(".*_cluster.csv$")
+download_file(cluster_info)
+cluster = read_typed_csv(cluster_info["dest"])
 cluster
 #                             X          Y    cell_type
 # NAME                                                 
@@ -59,7 +116,9 @@ cluster
 
 # [4067 rows x 3 columns]
 
-spatial = read_typed_csv(f"{par['input']}/cluster/humancortex_spatial.csv")
+spatial_info = get_download_info(".*_spatial.csv$")
+download_file(spatial_info)
+spatial = read_typed_csv(spatial_info["dest"])
 spatial
 #                               X            Y    cell_type
 # NAME                                                     
@@ -77,8 +136,9 @@ spatial
 
 # [4067 rows x 3 columns]
 
-
-metadata = read_typed_csv(f"{par['input']}/metadata/humancortex_metadata.csv")
+metadata_info = get_download_info(".*_metadata.csv$")
+download_file(metadata_info)
+metadata = read_typed_csv(metadata_info["dest"])
 metadata
 #                    biosample_id       donor_id         species  ... library_preparation_protocol__ontology_label     sex      cluster
 # NAME                                                            ...                                                                  
