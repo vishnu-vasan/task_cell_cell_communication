@@ -7,7 +7,14 @@ import urllib.request
 ## VIASH START
 par = {
   "dataset_curl_config": "resources/datasets/raw/singlecell_broadinstitute_configs/SCP2162.txt",
-  "output": "resources/datasets/SCP2167/raw_dataset.h5ad"
+  "dataset_id": "singlecell_broadinstitute_scp2162",
+  "dataset_name": "Mouse hippocampus Slide-tags snRNA-seq",
+  "dataset_url": "https://singlecell.broadinstitute.org/single_cell/study/SCP2162/slide-tags-snrna-seq-on-mouse-hippocampus#study-summary",
+  "dataset_reference": "doi: 10.1038/s41586-023-06837-4",
+  "dataset_summary": "Slide-tags snRNA-seq data on the mouse hippocampus.",
+  "dataset_description": "Recent technological innovations have enabled the high-throughput quantification of gene expression and epigenetic regulation within individual cells, transforming our understanding of how complex tissues are constructed. Missing from these measurements, however, is the ability to routinely and easily spatially localise these profiled cells. We developed a strategy, Slide-tags, in which single nuclei within an intact tissue section are ‘tagged’ with spatial barcode oligonucleotides derived from DNA-barcoded beads with known positions. These tagged nuclei can then be used as input into a wide variety of single-nucleus profiling assays. We used Slide-tags to profile two different stages of development in the mouse brain.\n\nOverall design 	Slide-tags was used to spatially barcode nuclei from 20-micron thick fresh frozen tissue sections. These spatially barcoded nuclei were then used as input for 10x Genomics Chromium v3.1 snRNA-seq.",
+  "dataset_organism": "mus_musculus",
+  "output": "resources/datasets/SCP2162/raw_dataset.h5ad"
 }
 meta = {
   "temp_dir": "/tmp"
@@ -18,7 +25,6 @@ temp_dir = f'{meta["temp_dir"]}/downloader_singlecell_broadinstitute_dataset'
 
 if not os.path.exists(temp_dir):
   os.makedirs(temp_dir)
-
 
 def read_typed_csv(path: str) -> pd.DataFrame:
   col_names = pd.read_csv(path, nrows=1).columns.tolist()
@@ -180,9 +186,15 @@ output.obs["cell_type"] = list(cluster.loc[index_intersect, "cell_type"].values)
 output.obsm["X_umap"] = cluster.loc[index_intersect, ["X", "Y"]].values
 output.obsm["spatial"] = spatial.loc[index_intersect, ["X", "Y"]].values
 
+# add uns
+cols = ["dataset_id", "dataset_name", "dataset_url", "dataset_reference", "dataset_summary", "dataset_description", "dataset_organism"]
+for col in cols:
+  output.uns[col] = par[col]
+
 # AnnData object with n_obs × n_vars = 4065 × 36601
 #     obs: 'biosample_id', 'donor_id', 'species', 'species__ontology_label', 'disease', 'disease__ontology_label', 'organ', 'organ__ontology_label', 'library_preparation_protocol', 'library_preparation_protocol__ontology_label', 'sex', 'cluster', 'cell_type'
 #     var: 'gene_ids', 'feature_types'
 #     obsm: 'X_umap', 'spatial'
 
+os.makedirs(os.path.dirname(par["output"]), exist_ok=True)
 output.write_h5ad(par["output"], compression="gzip")
