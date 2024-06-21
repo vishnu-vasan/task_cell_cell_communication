@@ -23,12 +23,6 @@ jobs:
       docker_matrix: ${{ steps.build-target.outputs.docker_matrix }}
 
     steps:
-      # return error if secrets are missing
-      - name: Check secrets
-        run: |
-          [ -z "${{ secrets.GTHB_USER }}" ] && echo "Missing GTHB_USER secret" && exit 1
-          [ -z "${{ secrets.GTHB_PAT }}" ] && echo "Missing GTHB_PAT secret" && exit 1
-
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
