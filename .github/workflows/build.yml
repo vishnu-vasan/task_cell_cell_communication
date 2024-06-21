@@ -58,6 +58,9 @@ jobs:
       - uses: data-intuitive/reclaim-the-bytes@v2
       
       - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          ref: ${{ needs.build-target.outputs.target_branch }}
 
       - uses: viash-io/viash-actions/setup@v5
           
