@@ -5,17 +5,19 @@ on:
     branches: [ 'main' ]
   workflow_dispatch:
     inputs:
-      target_branch:
-        description: 'Branch to deploy to. If not specified, `build-${BRANCH_NAME}` will be used.'
-        required: false
       version:
-        description: 'Version name to use for the build. If not specified, `build-${BRANCH_NAME}` will be used.'
+        description: 'Which version number to build. Example: `0.11.5`. If not specified, `${BRANCH_NAME}_build` will be used.'
+        required: false
+      target_branch:
+        description: 'Which Git branch to deploy to. For example, when releasing 0.11.5, the branch name should be `release/0.11.x`. If not specified, `${BRANCH_NAME}_build` will be used.'
         required: false
 
 jobs:
   # phase 1
   build-target:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     outputs:
       target_branch: ${{ steps.build-target.outputs.target_branch }}
@@ -47,6 +49,9 @@ jobs:
     needs: build-target
 
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     strategy:
       fail-fast: false
@@ -68,12 +73,12 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ secrets.GTHB_USER }}
-          password: ${{ secrets.GTHB_PAT }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build container
         run: |
-          if ${{ matrix.component.runner}} == "executable"; then
+          if "${{ matrix.component.runner}}" == "executable"; then
             extra_flag="---engine docker"
           fi
 
