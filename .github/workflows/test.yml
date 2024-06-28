@@ -44,7 +44,6 @@ jobs:
     - id: ns_list
       uses: viash-io/viash-actions/ns-list@v6
       with:
-        platform: docker
         format: json
 
     - id: ns_list_filtered
