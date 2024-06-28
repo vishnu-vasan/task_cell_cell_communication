@@ -20,8 +20,6 @@ jobs:
   # phase 1
   list:
     needs: run_ci_check_job
-    env:
-      s3_bucket: s3://openproblems-data/resources_test/cell_cell_communication
     runs-on: ubuntu-latest
     if: ${{ needs.run_ci_check_job.outputs.run == 'true' }}
 
