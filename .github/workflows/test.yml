@@ -14,6 +14,8 @@ jobs:
       - name: 'Check if branch has an existing pull request and the trigger was a push'
         id: github_cli
         uses: viash-io/viash-actions/project/check-concurrent-pr@add_sync_and_cache
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   # phase 1
   list:
