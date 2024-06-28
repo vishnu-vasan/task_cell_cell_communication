@@ -57,7 +57,7 @@ resources:
     path: script.py
 test_resources:
   - type: python_script
-    path: /common/src/component_tests/run_and_check_output.py
+    path: /common/component_tests/run_and_check_output.py
 engines:
   - type: docker
     image: ghcr.io/openproblems-bio/base_python:1.0.4

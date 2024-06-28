@@ -45,6 +45,7 @@ jobs:
       uses: viash-io/viash-actions/ns-list@v6
       with:
         format: json
+        runner: executable
 
     - id: ns_list_filtered
       uses: viash-io/viash-actions/project/detect-changed-components@v6
