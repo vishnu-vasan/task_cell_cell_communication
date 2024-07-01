@@ -1,4 +1,4 @@
-name: build
+name: Build
 
 on:
   push:
@@ -6,80 +6,16 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Which version number to build. Example: `0.11.5`. If not specified, `${BRANCH_NAME}_build` will be used.'
-        required: false
-      target_branch:
-        description: 'Which Git branch to deploy to. For example, when releasing 0.11.5, the branch name should be `release/0.11.x`. If not specified, `${BRANCH_NAME}_build` will be used.'
+        description: |
+          The version of the project to build. Example: `1.0.3`.
+          
+          If not provided, a development build with a version name
+          based on the branch name will be built. Otherwise, a release
+          build with the provided version will be built.
         required: false
 
 jobs:
-  # phase 1
-  build-target:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    outputs:
-      target_branch: ${{ steps.build-target.outputs.target_branch }}
-      version: ${{ steps.build-target.outputs.version }}
-      docker_matrix: ${{ steps.build-target.outputs.docker_matrix }}
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-
-      - uses: viash-io/viash-actions/setup@v6
-
-      - uses: viash-io/viash-actions/project/build-target@v6
-        id: build-target
-        with:
-          target_branch: ${{ github.event.inputs.target_branch }}
-          version: ${{ github.event.inputs.version }}
-      
-      - name: Deploy to target branch
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: ${{ steps.build-target.outputs.target_branch }}
-          publish_dir: .
-
-  # phase 2
-  build-docker:
-    needs: build-target
-
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        component: ${{ fromJson(needs.build-target.outputs.docker_matrix) }}
-
-    steps:
-      # Remove unnecessary files to free up space. Otherwise, we get 'no space left on device.'
-      - uses: data-intuitive/reclaim-the-bytes@v2
-      
-      - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
-          ref: ${{ needs.build-target.outputs.target_branch }}
-
-      - uses: viash-io/viash-actions/setup@v6
-          
-      - name: Login to container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build image
-        run: |
-          ${{matrix.component.executable}} ---engine docker ---setup build ---verbose
-  
-      - name: Push image
-        run: |
-          ${{matrix.component.executable}} ---engine docker ---setup push ---verbose
+  build:
+    uses: openproblems-bio/actions/.github/workflows/build.yml@main
+    with:
+      version: ${{ github.event.inputs.version }}

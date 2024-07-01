@@ -1,89 +1,9 @@
-name: test
+name: Build
 
 on:
   pull_request:
   push:
-    branches: [ '**' ]
 
 jobs:
-  run_ci_check_job:
-    runs-on: ubuntu-latest
-    outputs:
-      run: ${{ steps.github_cli.outputs.run }}
-    steps:
-      - name: 'Check if branch has an existing pull request and the trigger was a push'
-        id: github_cli
-        uses: viash-io/viash-actions/project/check-concurrent-pr@add_sync_and_cache
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-  # phase 1
-  list:
-    needs: run_ci_check_job
-    runs-on: ubuntu-latest
-    if: ${{ needs.run_ci_check_job.outputs.run == 'true' }}
-
-    outputs:
-      matrix: ${{ steps.ns_list_filtered.outputs.output_matrix }}
-      cache_key: ${{ steps.cache.outputs.cache_key }}
-      dest_paths: ${{ steps.cache.outputs.dest_paths }}
-
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        submodules: 'recursive'
-
-    - uses: viash-io/viash-actions/setup@v6
-
-    - uses: viash-io/viash-actions/project/sync-and-cache@add_sync_and_cache
-      id: cache
-
-    - id: ns_list
-      uses: viash-io/viash-actions/ns-list@v6
-      with:
-        format: json
-        runner: executable
-
-    - id: ns_list_filtered
-      uses: viash-io/viash-actions/project/detect-changed-components@v6
-      with:
-        input_file: "${{ steps.ns_list.outputs.output_file }}"
-
-  # phase 2
-  viash_test:
-    needs: list
-    if: ${{ needs.list.outputs.matrix != '[]' && needs.list.outputs.matrix != '' }}
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        component: ${{ fromJson(needs.list.outputs.matrix) }}
-
-    steps:
-    # Remove unnecessary files to free up space. Otherwise, we get 'no space left on device.'
-    - uses: data-intuitive/reclaim-the-bytes@v2
-    
-    - uses: actions/checkout@v4
-      with:
-        submodules: 'recursive'
-        
-    - uses: viash-io/viash-actions/setup@v6
-
-    # use cache
-    - name: Cache resources data
-      uses: actions/cache/restore@v4
-      timeout-minutes: 10
-      with:
-        path: ${{ needs.list.outputs.dest_paths }}
-        key: ${{ needs.list.outputs.cache_key }}
-
-    - name: Run test
-      timeout-minutes: 30
-      run: |
-        VIASH_TEMP=$RUNNER_TEMP/viash viash test \
-          "${{ matrix.component.config }}" \
-          --cpus 2 \
-          --memory "16gb"
-
+  build:
+    uses: openproblems-bio/actions/.github/workflows/test.yml@main
